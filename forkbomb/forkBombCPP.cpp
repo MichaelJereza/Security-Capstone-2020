@@ -16,7 +16,7 @@ bool check_image_exists(){
 bool open_image(){
 
     if(check_image_exists()){
-        ShellExecute(0, "open", "meme_payload.jpg", NULL, NULL, SW_SHOWNORMAL);
+        ShellExecute(0, "open", "meme_payload.jpg", NULL, NULL, SW_SHOWMAXIMIZED);
         return 1;
     } else {
         printf("No Payload!");
