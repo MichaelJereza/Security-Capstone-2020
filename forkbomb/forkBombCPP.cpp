@@ -35,7 +35,8 @@ bool open_image(){
 
 int main( )
 {
-    STARTUPINFO si;
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE); 
+	STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
     ZeroMemory( &si, sizeof(si) );
