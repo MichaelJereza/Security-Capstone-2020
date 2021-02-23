@@ -9,4 +9,5 @@ Windows XP SP3 does not include PowerShell 2.0 by default. Follow these steps to
 
 PowerShell requires you to set the execution policy before running any scripts:
 `powershell set-executionpolicy unrestricted` 
-i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ -static rootkit.cpp -o forkCPP.exe
+
+i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ -static rootkit.cpp -o rootkit.exe
