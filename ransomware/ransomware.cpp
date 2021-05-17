@@ -14,6 +14,7 @@
 #include <string>
 #include <dirent.h>
 #include <direct.h>
+#include <time.h>
 //#pragma execution_unsigned character_set( "utf-8" );
 
 unsigned char * CTXT_FROM_READ;
@@ -149,17 +150,29 @@ void randsom_note(){
   }
 }
 
+
+//This key generation is not even remotely uniformly random
+unsigned char* randGen(int size){
+  unsigned char* buffer = (unsigned char*) malloc(size * sizeof(unsigned char));
+  srand(time(NULL));
+  for( int i = 0; i < size; i++){
+    buffer[i] = rand() % 256;
+  }
+  return buffer; 
+}
+
+
 int main()
 {
   //printf("\nbegining of setup...\n");
   //TEST ----------------------------------------------------------------------------------------------------
   //Hard coded the key and the IV needs to be changed
   WORDA key_schedule[60];
-	BYTE enc_buf[128];
+/*	BYTE enc_buf[128];
 	BYTE plaintext[1][32] = {
 		{0x6b,0xc1,0xbe,0xe2,0x2e,0x40,0x9f,0x96,0xe9,0x3d,0x7e,0x11,0x73,0x93,0x17,0x2a,0xae,0x2d,0x8a,0x57,0x1e,0x03,0xac,0x9c,0x9e,0xb7,0x6f,0xac,0x45,0xaf,0x8e,0x51}
-	};
-	BYTE ciphertext[1][32] = {
+	};*/
+/*	BYTE ciphertext[1][32] = {
 		{0xf5,0x8c,0x4c,0x04,0xd6,0xe5,0xf1,0xba,0x77,0x9e,0xab,0xfb,0x5f,0x7b,0xfb,0xd6,0x9c,0xfc,0x4e,0x96,0x7e,0xdb,0x80,0x8d,0x67,0x9f,0x77,0x7b,0xc6,0x70,0x2c,0x7d}
 	};
 	BYTE iv[1][16] = {
@@ -167,18 +180,29 @@ int main()
 	};
 	BYTE key[1][32] = {
 		{0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4}
-	};
+	}; */
 	int pass = 1;
+  BYTE** key = (unsigned char **)calloc( 1, sizeof(unsigned char *));
+  key[0] = (unsigned char*)calloc(32, sizeof(unsigned char)); 
+  key[0] = randGen(32);
+
+  BYTE** iv = (unsigned char **)calloc( 1, sizeof(unsigned char *));
+  iv[0] = (unsigned char*)calloc(16, sizeof(unsigned char)); 
+  iv[0] = randGen(16);
+/*
+  BYTE** ciphertext = (unsigned char **)calloc( 1, sizeof(unsigned char *));
+  ciphertext[0] = (unsigned char*)calloc(32, sizeof(unsigned char)); 
+  
 
 	aes_key_setup(key[0], key_schedule, 256);
 
-
+   
 	aes_encrypt_cbc(plaintext[0], 32, enc_buf, key_schedule, 256, iv[0]);
-	pass = pass && !memcmp(enc_buf, ciphertext[0], 32);
+	//pass = pass && !memcmp(enc_buf, ciphertext[0], 32);
 
 	aes_decrypt_cbc(ciphertext[0], 32, enc_buf, key_schedule, 256, iv[0]);
 	pass = pass && !memcmp(enc_buf, plaintext[0], 32);
-  
+ */ 
 //  SetConsoleOutputCP( 65001 );
 //  printf( "Testing unicode -- English -- Ελληνικά -- Español -- Русский. aäbcdefghijklmnoöpqrsßtuüvwxyz\n" );
 //  printf("if it passes the test: %u", pass);
