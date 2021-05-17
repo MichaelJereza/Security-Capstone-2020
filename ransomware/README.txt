@@ -8,7 +8,7 @@ note: files from crypto-algorithms are from:
   https://github.com/B-Con/crypto-algorithms.git
   I copyed the files into the repo for ease of use (makes compiling way easyer).
   Also I added some comments and print statements for debugging to the files. Otherwise they are exactly the 
-  same. "crypto-aglorithms" isn't a compleatly secure implementation but its good enough for demonstatration. 
+  same. "crypto-aglorithms" isn't a completely secure implementation but its good enough for demonstatration. 
   Go to their page for more info on the implementation. 
 
   
