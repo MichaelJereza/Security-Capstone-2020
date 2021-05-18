@@ -1,13 +1,10 @@
-------
-README
-------
+# Rootkit
 
-Windows XP SP3 does not include PowerShell 2.0 by default. Follow these steps to acquire it.
+This rootkit demonstrates Windows XP privilege escalation. It kills the explorer.exe process and reopens it a minute later at the system privilege level.
 
-1. Install "NetFx20SP1_x86.exe" first. This is the Microsoft .NET Framework 2.0 Service Pack 1 which is required to install PowerShell 2.0.
-2. Install "windowsxp-kb968930-x86-eng_540d661066953d76a6907b6ee0d1cd4531c1e1c6" second. This is the Windows Management Framework Core that includes PowerShell 2.0.
+## Compiling on Linux
 
-PowerShell requires you to set the execution policy before running any scripts:
-`powershell set-executionpolicy unrestricted` 
+To cross-compile C++ for 32-bit windows a program called "Mingw" is used. 
+Here is the command containing required flags
 
-i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ -static rootkit.cpp -o rootkit.exe
+`i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ -static rootkit.cpp -o rootkit.exe`
